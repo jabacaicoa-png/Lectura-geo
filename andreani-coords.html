@@ -196,16 +196,19 @@
     <div class="result-card" id="resultPanel">
       <div class="result-header">
         <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-        <span>Coordenadas detectadas</span>
+        <span>Texto detectado</span>
       </div>
       <div class="result-body">
-        <div class="coords-value" id="coordsDisplay"></div>
-        <div class="coords-hint">Latitud, Longitud · Argentina</div>
-        <div class="coords-raw-box"><p id="coordsRaw"></p></div>
-        <a class="btn-maps" id="btnMaps" href="#" target="_blank">
+        <div style="font-size:11px;color:var(--gris-muted);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em;">Coordenadas leídas</div>
+        <textarea id="coordsDisplay" rows="2" style="width:100%;font-size:18px;font-weight:800;color:var(--gris-texto);border:2px solid var(--gris-borde);border-radius:6px;padding:10px;font-family:'Montserrat',sans-serif;resize:none;outline:none;"></textarea>
+        <div style="font-size:11px;color:var(--gris-muted);margin-top:5px;font-weight:500;" id="coordsHint"></div>
+        <button onclick="copiarYAbrir()" class="btn-maps" style="margin-top:12px;">
           <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-          Abrir en Google Maps
-        </a>
+          Copiar y abrir Google Maps
+        </button>
+        <div id="pasteHint" style="display:none;margin-top:10px;padding:10px 12px;background:#FFF8E1;border:1px solid #FFD54F;border-radius:6px;font-size:12px;font-weight:600;color:#7A5500;line-height:1.5;">
+          ✓ ¡Coordenadas copiadas!<br>En Google Maps: tocá la barra de búsqueda y pegá (mantené presionado → Pegar).
+        </div>
       </div>
     </div>
 
@@ -462,12 +465,11 @@ async function processImageWithFallback(croppedDataUrl) {
           setStatus(`<div class="spinner"></div>Procesando... ${Math.round(m.progress*100)}%`, 'loading');
       }
     });
-    const coords = extractCoords(res.data.text);
-    if (coords) {
-      showResult(coords.lat, coords.lng, res.data.text.trim());
-      setStatus('✓ Coordenadas encontradas correctamente', 'ok');
+    const coordText = limpiarCoordenadas(res.data.text);
+    if (coordText) {
+      showResult(coordText, 'Verificá que los números sean correctos antes de abrir Maps.');
+      setStatus('✓ Texto leído. Revisá y tocá el botón.', 'ok');
     } else {
-      // Fallback: leer imagen completa
       setStatus('<div class="spinner"></div>Buscando en imagen completa...', 'loading');
       processImage(fullImageData);
     }
@@ -477,18 +479,15 @@ async function processImageWithFallback(croppedDataUrl) {
 // ── SUBIR ARCHIVO ───────────────────────────────────────
 function processFile(e) {
   const f = e.target.files[0]; if (!f) return;
-  // Para archivos subidos, mostrar en cropCanvas para recortar también
   const reader = new FileReader();
   reader.onload = ev => {
     fullImageData = ev.target.result;
-    // Cargar en canvas oculto
     const img = new Image();
     img.onload = () => {
       const c = document.getElementById('canvas');
       c.width = img.width; c.height = img.height;
       c.getContext('2d').drawImage(img, 0, 0);
       showCropMode();
-      // Mostrar el wrapper
       document.getElementById('placeholder').style.display = 'none';
     };
     img.src = fullImageData;
@@ -496,7 +495,7 @@ function processFile(e) {
   reader.readAsDataURL(f);
 }
 
-// ── OCR ─────────────────────────────────────────────────
+// ── OCR IMAGEN COMPLETA ─────────────────────────────────
 async function processImage(dataUrl) {
   setStatus('<div class="spinner"></div>Leyendo texto...', 'loading');
   hideResult();
@@ -507,42 +506,68 @@ async function processImage(dataUrl) {
           setStatus(`<div class="spinner"></div>Procesando... ${Math.round(m.progress*100)}%`, 'loading');
       }
     });
-    const coords = extractCoords(res.data.text);
-    if (coords) {
-      showResult(coords.lat, coords.lng, res.data.text.trim());
-      setStatus('✓ Coordenadas encontradas correctamente', 'ok');
+    const coordText = limpiarCoordenadas(res.data.text);
+    if (coordText) {
+      showResult(coordText, 'Verificá que los números sean correctos antes de abrir Maps.');
+      setStatus('✓ Texto leído. Revisá y tocá el botón.', 'ok');
     } else {
-      setStatus('No se encontraron coordenadas. Intentá seleccionar solo la línea con los números.', 'error');
+      setStatus('No se encontró texto de coordenadas. Intentá seleccionar solo la línea "Referencia:".', 'error');
     }
   } catch(e) { setStatus('Error: ' + e.message, 'error'); }
 }
 
-function extractCoords(text) {
-  const patterns = [
-    /[Rr]eferencia[:\s]*(-?\d{1,3}[.,]\d{2,10})\s*[,;]\s*(-?\d{1,3}[.,]\d{2,10})/,
-    /(-?\d{1,3}[.,]\d{2,10})\s*[,;]\s*(-?\d{1,3}[.,]\d{2,10})/,
-    /(-?\d{2,3}[.,]\d{4,10})[^\d-]*(-?\d{2,3}[.,]\d{4,10})/,
-  ];
-  const t = text.replace(/\s+/g, ' ');
-  for (const p of patterns) {
-    const m = t.match(p);
-    if (m) {
-      let lat = parseFloat(m[1].replace(',','.')), lng = parseFloat(m[2].replace(',','.'));
-      if (lat > 0 && lat >= 22 && lat <= 55) lat = -lat;
-      if (lng > 0 && lng >= 53 && lng <= 73) lng = -lng;
-      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) return { lat, lng };
-    }
-  }
-  return null;
+// Limpia el texto OCR para quedarse solo con las coordenadas
+function limpiarCoordenadas(text) {
+  const t = text.replace(/\s+/g, ' ').trim();
+
+  // 1. Buscar línea "Referencia:" directamente
+  const refMatch = t.match(/[Rr]eferencia[:\s]+(-?\d[\d.,]+\s*[,;]\s*-?\d[\d.,]+)/);
+  if (refMatch) return normalizarCoords(refMatch[1]);
+
+  // 2. Buscar par de números con decimales largos (coordenadas)
+  const coordMatch = t.match(/(-?\d{1,3}[.,]\d{4,10})\s*[,;]\s*(-?\d{1,3}[.,]\d{4,10})/);
+  if (coordMatch) return normalizarCoords(coordMatch[1] + ',' + coordMatch[2]);
+
+  // 3. Devolver todo el texto limpio para que el usuario lo corrija
+  return t.replace(/\n/g, ' ').substring(0, 60);
 }
 
-function showResult(lat, lng, raw) {
-  document.getElementById('coordsDisplay').textContent = `${lat}, ${lng}`;
-  document.getElementById('coordsRaw').textContent = 'Texto detectado: ' + raw.replace(/\n/g,' ').substring(0,150);
-  document.getElementById('btnMaps').href = `https://www.google.com/maps?q=${lat},${lng}`;
+function normalizarCoords(str) {
+  // Asegurar formato lat,lng con negativos para Argentina
+  const parts = str.split(/[,;]/);
+  if (parts.length < 2) return str.trim();
+  let lat = parseFloat(parts[0].trim().replace(',','.'));
+  let lng = parseFloat(parts[1].trim().replace(',','.'));
+  if (lat > 0 && lat >= 22 && lat <= 55) lat = -lat;
+  if (lng > 0 && lng >= 53 && lng <= 73) lng = -lng;
+  return `${lat},${lng}`;
+}
+
+function showResult(coordText, hint) {
+  document.getElementById('coordsDisplay').value = coordText;
+  document.getElementById('coordsHint').textContent = hint || 'Podés editar si hace falta corregir algún dígito.';
+  document.getElementById('pasteHint').style.display = 'none';
   const p = document.getElementById('resultPanel');
   p.classList.add('visible');
   p.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function copiarYAbrir() {
+  const coords = document.getElementById('coordsDisplay').value.trim();
+  if (!coords) return;
+  // Copiar al portapapeles
+  navigator.clipboard.writeText(coords).catch(() => {
+    // Fallback para navegadores sin clipboard API
+    const ta = document.createElement('textarea');
+    ta.value = coords; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+  document.getElementById('pasteHint').style.display = 'block';
+  // Abrir Google Maps con las coordenadas en la URL directamente
+  setTimeout(() => {
+    window.open(`https://www.google.com/maps/search/${encodeURIComponent(coords)}`, '_blank');
+  }, 400);
 }
 function hideResult() { document.getElementById('resultPanel').classList.remove('visible'); }
 function setStatus(html, type) {
