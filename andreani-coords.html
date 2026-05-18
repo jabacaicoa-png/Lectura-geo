@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Andreani · Lector de Coordenadas</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap');
+  :root {
+    --rojo: #D0202A; --rojo-dark: #a8161f;
+    --gris-bg: #F4F4F4; --gris-panel: #FFFFFF;
+    --gris-borde: #E0E0E0; --gris-texto: #222222; --gris-muted: #888888;
+    --success: #1A7A3A; --success-bg: #E6F4EC; --success-border: #A8D8B8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--gris-bg); color: var(--gris-texto); font-family: 'Montserrat', sans-serif; min-height: 100vh; display: flex; justify-content: center; }
+  .app { width: 100%; max-width: 480px; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* HEADER */
+  .header { background: var(--rojo); padding: 18px 20px 20px; display: flex; align-items: center; gap: 16px; }
+  .logo-text { font-weight: 900; font-size: 26px; color: white; letter-spacing: 2px; white-space: nowrap; flex-shrink: 0; }
+  .header-titles { flex: 1; border-left: 2px solid rgba(255,255,255,0.3); padding-left: 14px; }
+  .header-titles h1 { font-size: 14px; font-weight: 800; color: white; text-transform: uppercase; letter-spacing: 0.03em; }
+  .header-titles p  { font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 500; margin-top: 3px; }
+
+  /* CONTENT */
+  .content { padding: 14px 14px 40px; display: flex; flex-direction: column; gap: 13px; flex: 1; }
+
+  /* CARD */
+  .card { background: var(--gris-panel); border-radius: 8px; border: 1px solid var(--gris-borde); overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+  .card-header { background: var(--rojo); padding: 9px 14px; display: flex; align-items: center; gap: 8px; }
+  .card-header svg  { width: 15px; height: 15px; fill: white; flex-shrink: 0; }
+  .card-header span { font-size: 11px; font-weight: 800; color: white; text-transform: uppercase; letter-spacing: 0.1em; }
+  .card-body { padding: 14px; }
+
+  /* CÁMARA */
+  .camera-wrapper { position: relative; background: #111; border-radius: 6px; overflow: hidden; aspect-ratio: 4/3; }
+  .scan-frame { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+  .scan-frame::before,.scan-frame::after,.sf-tr,.sf-bl { content:''; position:absolute; width:24px; height:24px; }
+  .scan-frame::before { top:10px; left:10px; border-top:3px solid white; border-left:3px solid white; }
+  .scan-frame::after  { bottom:10px; right:10px; border-bottom:3px solid white; border-right:3px solid white; }
+  .sf-tr { top:10px; right:10px; border-top:3px solid white; border-right:3px solid white; }
+  .sf-bl { bottom:10px; left:10px; border-bottom:3px solid white; border-left:3px solid white; }
+  .scan-line { position:absolute; left:10px; right:10px; height:2px; background:linear-gradient(90deg,transparent,var(--rojo),transparent); top:10px; animation:scanMove 2.5s ease-in-out infinite; display:none; z-index:11; }
+  @keyframes scanMove { 0%{top:10px;opacity:0} 5%{opacity:1} 95%{opacity:1} 100%{top:calc(100% - 12px);opacity:0} }
+  #video  { width:100%; height:100%; object-fit:cover; display:none; }
+  #canvas { display:none; }
+  .camera-placeholder { width:100%; height:100%; min-height:190px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; }
+  .camera-placeholder svg { width:40px; height:40px; fill:#555; opacity:0.4; }
+  .camera-placeholder p { font-size:12px; font-weight:600; color:#777; text-align:center; padding:0 20px; line-height:1.4; }
+
+  /* RECORTE */
+  #cropOverlay {
+    position: absolute; inset: 0; z-index: 20; cursor: crosshair; display: none;
+  }
+  #cropCanvas {
+    position: absolute; inset: 0; width: 100%; height: 100%; z-index: 21; display: none;
+    cursor: crosshair;
+  }
+  .crop-hint {
+    position: absolute; bottom: 10px; left: 0; right: 0; text-align: center;
+    color: white; font-size: 12px; font-weight: 700; z-index: 22;
+    background: rgba(0,0,0,0.55); padding: 6px; display: none;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  }
+
+  /* BOTONES */
+  .btn-row { display: flex; gap: 10px; margin-top: 12px; }
+  .btn { flex:1; padding:12px 8px; font-family:'Montserrat',sans-serif; font-size:12px; font-weight:800; letter-spacing:0.04em; text-transform:uppercase; border:none; border-radius:6px; cursor:pointer; transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+  .btn svg { width:15px; height:15px; fill:currentColor; flex-shrink:0; }
+  .btn-primary { background:var(--rojo); color:white; box-shadow:0 2px 8px rgba(208,32,42,0.3); }
+  .btn-primary:hover   { background:var(--rojo-dark); }
+  .btn-primary:active  { transform:scale(0.97); }
+  .btn-primary:disabled { background:#ddd; color:#aaa; box-shadow:none; cursor:not-allowed; }
+  .btn-outline { background:white; color:var(--rojo); border:2px solid var(--rojo); }
+  .btn-outline:hover   { background:#fff0f1; }
+  .btn-outline:active  { transform:scale(0.97); }
+  .btn-outline:disabled { border-color:#ddd; color:#aaa; cursor:not-allowed; }
+  .btn-ghost { width:100%; background:white; color:var(--gris-muted); border:1px solid var(--gris-borde); border-radius:6px; padding:12px; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer; transition:all 0.15s; box-shadow:0 1px 3px rgba(0,0,0,0.05); font-family:'Montserrat',sans-serif; }
+  .btn-ghost svg { width:15px; height:15px; fill:var(--gris-muted); }
+  .btn-ghost:hover  { background:#f5f5f5; }
+
+  /* INFO RECORTE */
+  .crop-info { margin-top: 10px; padding: 9px 12px; background: #FFF8E1; border: 1px solid #FFD54F; border-radius: 6px; font-size: 12px; font-weight: 600; color: #7A5500; display: none; align-items: center; gap: 8px; line-height: 1.3; }
+  .crop-info.visible { display: flex; }
+  .crop-info svg { width: 16px; height: 16px; fill: #F5A800; flex-shrink: 0; }
+
+  /* STATUS */
+  .status-bar { margin-top:10px; padding:10px 13px; border-radius:6px; font-size:12px; font-weight:600; display:none; align-items:center; gap:8px; line-height:1.3; }
+  .status-bar.visible { display:flex; }
+  .status-bar.loading { background:#EEF4FF; color:#2255BB; border:1px solid #BBCFF5; }
+  .status-bar.error   { background:#FFF0F1; color:var(--rojo); border:1px solid #F5BBBB; }
+  .status-bar.ok      { background:var(--success-bg); color:var(--success); border:1px solid var(--success-border); }
+  .spinner { width:14px; height:14px; border:2px solid currentColor; border-top-color:transparent; border-radius:50%; animation:spin 0.7s linear infinite; flex-shrink:0; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  /* DIVIDER */
+  .divider { display:flex; align-items:center; gap:10px; }
+  .divider-line { flex:1; height:1px; background:var(--gris-borde); }
+  .divider-text { font-size:10px; color:var(--gris-muted); font-weight:700; letter-spacing:0.1em; text-transform:uppercase; }
+
+  /* RESULTADO */
+  .result-card { background:white; border-radius:8px; border:2px solid var(--success); overflow:hidden; box-shadow:0 2px 10px rgba(26,122,58,0.1); display:none; }
+  .result-card.visible { display:block; }
+  .result-header { background:var(--success-bg); padding:10px 14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--success-border); }
+  .result-header svg  { width:15px; height:15px; fill:var(--success); }
+  .result-header span { font-size:11px; font-weight:800; color:var(--success); text-transform:uppercase; letter-spacing:0.08em; }
+  .result-body { padding:14px; }
+  .coords-value { font-size:19px; font-weight:800; color:var(--gris-texto); letter-spacing:0.01em; line-height:1.3; }
+  .coords-hint  { font-size:11px; color:var(--gris-muted); margin-top:4px; font-weight:500; }
+  .coords-raw-box { margin-top:10px; padding:9px 11px; background:var(--gris-bg); border-radius:5px; border:1px solid var(--gris-borde); }
+  .coords-raw-box p { font-size:11px; color:var(--gris-muted); line-height:1.5; font-weight:500; }
+  .btn-maps { display:flex; align-items:center; justify-content:center; gap:9px; width:100%; margin-top:13px; padding:15px; background:var(--rojo); color:white; font-family:'Montserrat',sans-serif; font-size:13px; font-weight:800; letter-spacing:0.06em; text-transform:uppercase; border:none; border-radius:6px; cursor:pointer; text-decoration:none; transition:all 0.15s; box-shadow:0 3px 10px rgba(208,32,42,0.35); }
+  .btn-maps:hover  { background:var(--rojo-dark); }
+  .btn-maps:active { transform:scale(0.98); }
+  .btn-maps svg { width:17px; height:17px; fill:white; }
+
+  #fileInput { display:none; }
+  .footer { padding:0 14px 20px; text-align:center; font-size:10px; color:var(--gris-muted); font-weight:600; letter-spacing:0.04em; text-transform:uppercase; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="logo-text">ANDREANI</div>
+    <div class="header-titles">
+      <h1>Lector de Coordenadas</h1>
+      <p>Herramienta interna · Entregas</p>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <div class="card">
+      <div class="card-header">
+        <svg viewBox="0 0 24 24"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+        <span>Cámara</span>
+      </div>
+      <div class="card-body">
+
+        <div class="camera-wrapper" id="cameraWrapper">
+          <div class="scan-frame"><div class="sf-tr"></div><div class="sf-bl"></div></div>
+          <div class="scan-line" id="scanLine"></div>
+          <div class="camera-placeholder" id="placeholder">
+            <svg viewBox="0 0 24 24"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+            <p>Activá la cámara y apuntá al texto con las coordenadas del sobre</p>
+          </div>
+          <video id="video" autoplay playsinline></video>
+          <canvas id="canvas"></canvas>
+          <!-- Canvas de recorte superpuesto sobre la imagen capturada -->
+          <canvas id="cropCanvas"></canvas>
+          <div class="crop-hint" id="cropHint">Arrastrá para seleccionar la línea con las coordenadas</div>
+        </div>
+
+        <!-- Info de recorte -->
+        <div class="crop-info" id="cropInfo">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          Seleccioná el área con las coordenadas y tocá <strong>&nbsp;Leer zona</strong>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btnCamera" onclick="toggleCamera()">
+            <svg viewBox="0 0 24 24"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+            Activar cámara
+          </button>
+          <button class="btn btn-outline" id="btnCapture" onclick="capture()" disabled>
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/></svg>
+            Capturar
+          </button>
+        </div>
+
+        <!-- Botón leer zona: aparece tras seleccionar recorte -->
+        <button class="btn btn-primary" id="btnReadCrop" onclick="readCrop()" style="width:100%;margin-top:10px;display:none;">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
+          Leer zona seleccionada
+        </button>
+
+        <div class="status-bar" id="statusBar"></div>
+      </div>
+    </div>
+
+    <div class="divider">
+      <div class="divider-line"></div>
+      <div class="divider-text">o subir foto</div>
+      <div class="divider-line"></div>
+    </div>
+
+    <input type="file" id="fileInput" accept="image/*" onchange="processFile(event)">
+    <button class="btn-ghost" onclick="document.getElementById('fileInput').click()">
+      <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+      Subir foto del sobre
+    </button>
+
+    <div class="result-card" id="resultPanel">
+      <div class="result-header">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        <span>Coordenadas detectadas</span>
+      </div>
+      <div class="result-body">
+        <div class="coords-value" id="coordsDisplay"></div>
+        <div class="coords-hint">Latitud, Longitud · Argentina</div>
+        <div class="coords-raw-box"><p id="coordsRaw"></p></div>
+        <a class="btn-maps" id="btnMaps" href="#" target="_blank">
+          <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+          Abrir en Google Maps
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">Andreani · Herramienta interna de entregas · v1.3</div>
+</div>
+
+<script>
+let stream = null, cameraActive = false;
+// Estado del recorte
+let fullImageData = null; // dataUrl de la imagen completa capturada
+let cropRect = null;      // {x,y,w,h} en coords del canvas de recorte
+let isDragging = false, dragStart = null;
+let cropCanvasEl, cropCtx, cameraWrapperEl;
+
+window.addEventListener('DOMContentLoaded', () => {
+  cropCanvasEl = document.getElementById('cropCanvas');
+  cropCtx = cropCanvasEl.getContext('2d');
+  cameraWrapperEl = document.getElementById('cameraWrapper');
+  initCropEvents();
+});
+
+// ── CÁMARA ─────────────────────────────────────────────
+async function toggleCamera() { cameraActive ? stopCamera() : await startCamera(); }
+
+async function startCamera() {
+  try {
+    setStatus('<div class="spinner"></div>Iniciando cámara...', 'loading');
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } }
+    });
+    const v = document.getElementById('video');
+    v.srcObject = stream; v.style.display = 'block';
+    document.getElementById('placeholder').style.display = 'none';
+    document.getElementById('scanLine').style.display = 'block';
+    setBtnCamera('close');
+    document.getElementById('btnCapture').disabled = false;
+    cameraActive = true;
+    setStatus('Apuntá al sobre y presioná Capturar.', 'loading');
+    hideCropMode();
+  } catch(e) { setStatus('No se pudo acceder a la cámara: ' + e.message, 'error'); }
+}
+
+function stopCamera() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  const v = document.getElementById('video');
+  v.srcObject = null; v.style.display = 'none';
+  document.getElementById('placeholder').style.display = 'flex';
+  document.getElementById('scanLine').style.display = 'none';
+  setBtnCamera('open');
+  document.getElementById('btnCapture').disabled = true;
+  cameraActive = false; clearStatus(); hideCropMode();
+}
+
+function setBtnCamera(mode) {
+  const b = document.getElementById('btnCamera');
+  if (mode === 'close') {
+    b.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" style="width:15px;height:15px"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg> Cerrar cámara`;
+  } else {
+    b.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" style="width:15px;height:15px"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg> Activar cámara`;
+  }
+}
+
+// ── CAPTURAR ────────────────────────────────────────────
+function capture() {
+  const v = document.getElementById('video');
+  const c = document.getElementById('canvas');
+  c.width = v.videoWidth; c.height = v.videoHeight;
+  c.getContext('2d').drawImage(v, 0, 0);
+  fullImageData = c.toDataURL('image/png');
+
+  // Mostrar imagen capturada en el cropCanvas
+  showCropMode();
+}
+
+function showCropMode() {
+  const wrapper = cameraWrapperEl;
+  const w = wrapper.clientWidth, h = wrapper.clientHeight;
+  cropCanvasEl.width = w; cropCanvasEl.height = h;
+  cropCanvasEl.style.display = 'block';
+
+  // Dibujar la imagen capturada en el crop canvas
+  const img = new Image();
+  img.onload = () => {
+    cropCtx.drawImage(img, 0, 0, w, h);
+    // Oscurecer toda la imagen para destacar la selección
+    cropCtx.fillStyle = 'rgba(0,0,0,0.45)';
+    cropCtx.fillRect(0, 0, w, h);
+  };
+  img.src = fullImageData;
+
+  document.getElementById('video').style.display = 'none';
+  document.getElementById('scanLine').style.display = 'none';
+  document.getElementById('cropHint').style.display = 'block';
+  document.getElementById('cropInfo').classList.add('visible');
+  cropRect = null;
+  setStatus('Arrastrá sobre la línea "Referencia:" para seleccionarla.', 'loading');
+}
+
+function hideCropMode() {
+  cropCanvasEl.style.display = 'none';
+  document.getElementById('cropHint').style.display = 'none';
+  document.getElementById('cropInfo').classList.remove('visible');
+  document.getElementById('btnReadCrop').style.display = 'none';
+  cropRect = null; fullImageData = null;
+}
+
+// ── EVENTOS DE RECORTE (touch + mouse) ─────────────────
+function initCropEvents() {
+  // Touch
+  cropCanvasEl.addEventListener('touchstart', e => {
+    e.preventDefault();
+    const pt = getTouchPos(e);
+    dragStart = pt; isDragging = true; cropRect = null;
+    document.getElementById('btnReadCrop').style.display = 'none';
+  }, { passive: false });
+
+  cropCanvasEl.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (!isDragging) return;
+    const pt = getTouchPos(e);
+    drawSelection(dragStart, pt);
+  }, { passive: false });
+
+  cropCanvasEl.addEventListener('touchend', e => {
+    e.preventDefault();
+    if (!isDragging) return;
+    isDragging = false;
+    if (cropRect && cropRect.w > 10 && cropRect.h > 10) {
+      document.getElementById('btnReadCrop').style.display = 'flex';
+      setStatus('Zona seleccionada. Tocá "Leer zona seleccionada".', 'ok');
+    }
+  }, { passive: false });
+
+  // Mouse (para desktop/preview)
+  cropCanvasEl.addEventListener('mousedown', e => {
+    dragStart = getMousePos(e); isDragging = true; cropRect = null;
+    document.getElementById('btnReadCrop').style.display = 'none';
+  });
+  cropCanvasEl.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    drawSelection(dragStart, getMousePos(e));
+  });
+  cropCanvasEl.addEventListener('mouseup', e => {
+    if (!isDragging) return;
+    isDragging = false;
+    if (cropRect && cropRect.w > 10 && cropRect.h > 10) {
+      document.getElementById('btnReadCrop').style.display = 'flex';
+      setStatus('Zona seleccionada. Tocá "Leer zona seleccionada".', 'ok');
+    }
+  });
+}
+
+function getTouchPos(e) {
+  const rect = cropCanvasEl.getBoundingClientRect();
+  const t = e.touches[0] || e.changedTouches[0];
+  return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+}
+function getMousePos(e) {
+  const rect = cropCanvasEl.getBoundingClientRect();
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+function drawSelection(start, end) {
+  const w = cropCanvasEl.width, h = cropCanvasEl.height;
+  const img = new Image();
+  img.onload = () => {
+    cropCtx.clearRect(0, 0, w, h);
+    cropCtx.drawImage(img, 0, 0, w, h);
+    // Oscurecer todo
+    cropCtx.fillStyle = 'rgba(0,0,0,0.45)';
+    cropCtx.fillRect(0, 0, w, h);
+    // Recorte claro
+    const x = Math.min(start.x, end.x);
+    const y = Math.min(start.y, end.y);
+    const rw = Math.abs(end.x - start.x);
+    const rh = Math.abs(end.y - start.y);
+    cropRect = { x, y, w: rw, h: rh };
+    // Limpiar zona seleccionada (mostrar imagen original)
+    cropCtx.save();
+    cropCtx.globalCompositeOperation = 'destination-out';
+    cropCtx.fillRect(x, y, rw, rh);
+    cropCtx.restore();
+    cropCtx.drawImage(img, x * (img.width/w), y * (img.height/h), rw * (img.width/w), rh * (img.height/h), x, y, rw, rh);
+    // Borde de selección
+    cropCtx.strokeStyle = '#D0202A';
+    cropCtx.lineWidth = 2;
+    cropCtx.setLineDash([6, 3]);
+    cropCtx.strokeRect(x, y, rw, rh);
+    cropCtx.setLineDash([]);
+  };
+  img.src = fullImageData;
+}
+
+// ── LEER ZONA RECORTADA ─────────────────────────────────
+function readCrop() {
+  if (!cropRect || !fullImageData) return;
+  // Extraer la zona del canvas original (no el de display)
+  const origCanvas = document.getElementById('canvas');
+  const scaleX = origCanvas.width  / cropCanvasEl.width;
+  const scaleY = origCanvas.height / cropCanvasEl.height;
+
+  // Añadir padding vertical generoso para no cortar texto
+  const pad = 8;
+  const sx = Math.max(0, (cropRect.x - pad) * scaleX);
+  const sy = Math.max(0, (cropRect.y - pad) * scaleY);
+  const sw = Math.min(origCanvas.width  - sx, (cropRect.w + pad*2) * scaleX);
+  const sh = Math.min(origCanvas.height - sy, (cropRect.h + pad*2) * scaleY);
+
+  // Escalar el recorte x3 para mejorar OCR
+  const scale = 3;
+  const tmpCanvas = document.createElement('canvas');
+  tmpCanvas.width = sw * scale; tmpCanvas.height = sh * scale;
+  const tmpCtx = tmpCanvas.getContext('2d');
+  tmpCtx.imageSmoothingEnabled = false;
+  tmpCtx.drawImage(origCanvas, sx, sy, sw, sh, 0, 0, sw * scale, sh * scale);
+
+  // Preprocesamiento: aumentar contraste
+  const imgData = tmpCtx.getImageData(0, 0, tmpCanvas.width, tmpCanvas.height);
+  const data = imgData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const gray = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+    const val = gray > 128 ? 255 : 0;
+    data[i] = data[i+1] = data[i+2] = val;
+  }
+  tmpCtx.putImageData(imgData, 0, 0);
+
+  processImage(tmpCanvas.toDataURL('image/png'));
+}
+
+// ── SUBIR ARCHIVO ───────────────────────────────────────
+function processFile(e) {
+  const f = e.target.files[0]; if (!f) return;
+  // Para archivos subidos, mostrar en cropCanvas para recortar también
+  const reader = new FileReader();
+  reader.onload = ev => {
+    fullImageData = ev.target.result;
+    // Cargar en canvas oculto
+    const img = new Image();
+    img.onload = () => {
+      const c = document.getElementById('canvas');
+      c.width = img.width; c.height = img.height;
+      c.getContext('2d').drawImage(img, 0, 0);
+      showCropMode();
+      // Mostrar el wrapper
+      document.getElementById('placeholder').style.display = 'none';
+    };
+    img.src = fullImageData;
+  };
+  reader.readAsDataURL(f);
+}
+
+// ── OCR ─────────────────────────────────────────────────
+async function processImage(dataUrl) {
+  setStatus('<div class="spinner"></div>Leyendo texto...', 'loading');
+  hideResult();
+  try {
+    const res = await Tesseract.recognize(dataUrl, 'spa+eng', {
+      logger: m => {
+        if (m.status === 'recognizing text')
+          setStatus(`<div class="spinner"></div>Procesando... ${Math.round(m.progress*100)}%`, 'loading');
+      }
+    });
+    const coords = extractCoords(res.data.text);
+    if (coords) {
+      showResult(coords.lat, coords.lng, res.data.text.trim());
+      setStatus('✓ Coordenadas encontradas correctamente', 'ok');
+    } else {
+      setStatus('No se encontraron coordenadas. Intentá seleccionar solo la línea con los números.', 'error');
+    }
+  } catch(e) { setStatus('Error: ' + e.message, 'error'); }
+}
+
+function extractCoords(text) {
+  const patterns = [
+    /[Rr]eferencia[:\s]*(-?\d{1,3}[.,]\d{2,10})\s*[,;]\s*(-?\d{1,3}[.,]\d{2,10})/,
+    /(-?\d{1,3}[.,]\d{2,10})\s*[,;]\s*(-?\d{1,3}[.,]\d{2,10})/,
+    /(-?\d{2,3}[.,]\d{4,10})[^\d-]*(-?\d{2,3}[.,]\d{4,10})/,
+  ];
+  const t = text.replace(/\s+/g, ' ');
+  for (const p of patterns) {
+    const m = t.match(p);
+    if (m) {
+      let lat = parseFloat(m[1].replace(',','.')), lng = parseFloat(m[2].replace(',','.'));
+      if (lat > 0 && lat >= 22 && lat <= 55) lat = -lat;
+      if (lng > 0 && lng >= 53 && lng <= 73) lng = -lng;
+      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) return { lat, lng };
+    }
+  }
+  return null;
+}
+
+function showResult(lat, lng, raw) {
+  document.getElementById('coordsDisplay').textContent = `${lat}, ${lng}`;
+  document.getElementById('coordsRaw').textContent = 'Texto detectado: ' + raw.replace(/\n/g,' ').substring(0,150);
+  document.getElementById('btnMaps').href = `https://www.google.com/maps?q=${lat},${lng}`;
+  const p = document.getElementById('resultPanel');
+  p.classList.add('visible');
+  p.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+function hideResult() { document.getElementById('resultPanel').classList.remove('visible'); }
+function setStatus(html, type) {
+  const b = document.getElementById('statusBar');
+  b.innerHTML = html; b.className = 'status-bar visible ' + (type||'');
+}
+function clearStatus() { document.getElementById('statusBar').className = 'status-bar'; }
+</script>
+</body>
+</html>
