@@ -46,45 +46,25 @@
   @keyframes scanMove { 0%{top:10px;opacity:0} 5%{opacity:1} 95%{opacity:1} 100%{top:calc(100% - 12px);opacity:0} }
   #video  { width:100%; height:100%; object-fit:cover; display:none; }
   #canvas { display:none; }
-  .camera-placeholder { width:100%; height:100%; min-height:190px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; }
-  .camera-placeholder svg { width:40px; height:40px; fill:#555; opacity:0.4; }
-  .camera-placeholder p { font-size:12px; font-weight:600; color:#777; text-align:center; padding:0 20px; line-height:1.4; }
-
-  /* RECORTE */
-  #cropOverlay {
-    position: absolute; inset: 0; z-index: 20; cursor: crosshair; display: none;
-  }
-  #cropCanvas {
-    position: absolute; inset: 0; width: 100%; height: 100%; z-index: 21; display: none;
-    cursor: crosshair;
-  }
-  .crop-hint {
-    position: absolute; bottom: 10px; left: 0; right: 0; text-align: center;
-    color: white; font-size: 12px; font-weight: 700; z-index: 22;
-    background: rgba(0,0,0,0.55); padding: 6px; display: none;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
-  }
+  .camera-placeholder { width:100%; height:100%; min-height:200px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; }
+  .camera-placeholder svg { width:44px; height:44px; fill:#555; opacity:0.4; }
+  .camera-placeholder p { font-size:12px; font-weight:600; color:#777; text-align:center; padding:0 20px; line-height:1.5; }
 
   /* BOTONES */
   .btn-row { display: flex; gap: 10px; margin-top: 12px; }
-  .btn { flex:1; padding:12px 8px; font-family:'Montserrat',sans-serif; font-size:12px; font-weight:800; letter-spacing:0.04em; text-transform:uppercase; border:none; border-radius:6px; cursor:pointer; transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+  .btn { flex:1; padding:13px 10px; font-family:'Montserrat',sans-serif; font-size:12px; font-weight:800; letter-spacing:0.04em; text-transform:uppercase; border:none; border-radius:6px; cursor:pointer; transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:6px; }
   .btn svg { width:15px; height:15px; fill:currentColor; flex-shrink:0; }
   .btn-primary { background:var(--rojo); color:white; box-shadow:0 2px 8px rgba(208,32,42,0.3); }
-  .btn-primary:hover   { background:var(--rojo-dark); }
-  .btn-primary:active  { transform:scale(0.97); }
+  .btn-primary:hover  { background:var(--rojo-dark); }
+  .btn-primary:active { transform:scale(0.97); }
   .btn-primary:disabled { background:#ddd; color:#aaa; box-shadow:none; cursor:not-allowed; }
   .btn-outline { background:white; color:var(--rojo); border:2px solid var(--rojo); }
-  .btn-outline:hover   { background:#fff0f1; }
-  .btn-outline:active  { transform:scale(0.97); }
+  .btn-outline:hover  { background:#fff0f1; }
+  .btn-outline:active { transform:scale(0.97); }
   .btn-outline:disabled { border-color:#ddd; color:#aaa; cursor:not-allowed; }
-  .btn-ghost { width:100%; background:white; color:var(--gris-muted); border:1px solid var(--gris-borde); border-radius:6px; padding:12px; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer; transition:all 0.15s; box-shadow:0 1px 3px rgba(0,0,0,0.05); font-family:'Montserrat',sans-serif; }
+  .btn-ghost { width:100%; background:white; color:var(--gris-muted); border:1px solid var(--gris-borde); border-radius:6px; padding:13px; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer; transition:all 0.15s; font-family:'Montserrat',sans-serif; }
   .btn-ghost svg { width:15px; height:15px; fill:var(--gris-muted); }
-  .btn-ghost:hover  { background:#f5f5f5; }
-
-  /* INFO RECORTE */
-  .crop-info { margin-top: 10px; padding: 9px 12px; background: #FFF8E1; border: 1px solid #FFD54F; border-radius: 6px; font-size: 12px; font-weight: 600; color: #7A5500; display: none; align-items: center; gap: 8px; line-height: 1.3; }
-  .crop-info.visible { display: flex; }
-  .crop-info svg { width: 16px; height: 16px; fill: #F5A800; flex-shrink: 0; }
+  .btn-ghost:hover { background:#f5f5f5; }
 
   /* STATUS */
   .status-bar { margin-top:10px; padding:10px 13px; border-radius:6px; font-size:12px; font-weight:600; display:none; align-items:center; gap:8px; line-height:1.3; }
@@ -107,14 +87,35 @@
   .result-header svg  { width:15px; height:15px; fill:var(--success); }
   .result-header span { font-size:11px; font-weight:800; color:var(--success); text-transform:uppercase; letter-spacing:0.08em; }
   .result-body { padding:14px; }
-  .coords-value { font-size:19px; font-weight:800; color:var(--gris-texto); letter-spacing:0.01em; line-height:1.3; }
-  .coords-hint  { font-size:11px; color:var(--gris-muted); margin-top:4px; font-weight:500; }
-  .coords-raw-box { margin-top:10px; padding:9px 11px; background:var(--gris-bg); border-radius:5px; border:1px solid var(--gris-borde); }
-  .coords-raw-box p { font-size:11px; color:var(--gris-muted); line-height:1.5; font-weight:500; }
-  .btn-maps { display:flex; align-items:center; justify-content:center; gap:9px; width:100%; margin-top:13px; padding:15px; background:var(--rojo); color:white; font-family:'Montserrat',sans-serif; font-size:13px; font-weight:800; letter-spacing:0.06em; text-transform:uppercase; border:none; border-radius:6px; cursor:pointer; text-decoration:none; transition:all 0.15s; box-shadow:0 3px 10px rgba(208,32,42,0.35); }
+
+  .coords-label { font-size:11px; color:var(--gris-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px; }
+  #coordsDisplay {
+    width:100%; font-size:17px; font-weight:800; color:var(--gris-texto);
+    border:2px solid var(--gris-borde); border-radius:6px; padding:10px 12px;
+    font-family:'Montserrat',sans-serif; resize:none; outline:none; line-height:1.4;
+  }
+  #coordsDisplay:focus { border-color: var(--rojo); }
+  .coords-edit-hint { font-size:11px; color:var(--gris-muted); margin-top:5px; font-weight:500; }
+
+  .btn-maps {
+    display:flex; align-items:center; justify-content:center; gap:9px;
+    width:100%; margin-top:13px; padding:15px;
+    background:var(--rojo); color:white;
+    font-family:'Montserrat',sans-serif; font-size:13px; font-weight:800;
+    letter-spacing:0.06em; text-transform:uppercase;
+    border:none; border-radius:6px; cursor:pointer;
+    text-decoration:none; transition:all 0.15s;
+    box-shadow:0 3px 10px rgba(208,32,42,0.35);
+  }
   .btn-maps:hover  { background:var(--rojo-dark); }
   .btn-maps:active { transform:scale(0.98); }
   .btn-maps svg { width:17px; height:17px; fill:white; }
+
+  .paste-hint {
+    display:none; margin-top:10px; padding:11px 13px;
+    background:#E8F5E9; border:1px solid #A5D6A7; border-radius:6px;
+    font-size:12px; font-weight:600; color:#1B5E20; line-height:1.6;
+  }
 
   #fileInput { display:none; }
   .footer { padding:0 14px 20px; text-align:center; font-size:10px; color:var(--gris-muted); font-weight:600; letter-spacing:0.04em; text-transform:uppercase; }
@@ -133,36 +134,27 @@
 
   <div class="content">
 
+    <!-- CÁMARA -->
     <div class="card">
       <div class="card-header">
         <svg viewBox="0 0 24 24"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
         <span>Cámara</span>
       </div>
       <div class="card-body">
-
-        <div class="camera-wrapper" id="cameraWrapper">
+        <div class="camera-wrapper">
           <div class="scan-frame"><div class="sf-tr"></div><div class="sf-bl"></div></div>
           <div class="scan-line" id="scanLine"></div>
           <div class="camera-placeholder" id="placeholder">
             <svg viewBox="0 0 24 24"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
-            <p>Activá la cámara y apuntá al texto con las coordenadas del sobre</p>
+            <p>Activá la cámara, apuntá al sobre y capturá. La app busca las coordenadas automáticamente.</p>
           </div>
           <video id="video" autoplay playsinline></video>
           <canvas id="canvas"></canvas>
-          <!-- Canvas de recorte superpuesto sobre la imagen capturada -->
-          <canvas id="cropCanvas"></canvas>
-          <div class="crop-hint" id="cropHint">Arrastrá para seleccionar la línea con las coordenadas</div>
-        </div>
-
-        <!-- Info de recorte -->
-        <div class="crop-info" id="cropInfo">
-          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-          Seleccioná el área con las coordenadas y tocá <strong>&nbsp;Leer zona</strong>
         </div>
 
         <div class="btn-row">
           <button class="btn btn-primary" id="btnCamera" onclick="toggleCamera()">
-            <svg viewBox="0 0 24 24"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
             Activar cámara
           </button>
           <button class="btn btn-outline" id="btnCapture" onclick="capture()" disabled>
@@ -171,16 +163,11 @@
           </button>
         </div>
 
-        <!-- Botón leer zona: aparece tras seleccionar recorte -->
-        <button class="btn btn-primary" id="btnReadCrop" onclick="readCrop()" style="width:100%;margin-top:10px;display:none;">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
-          Leer zona seleccionada
-        </button>
-
         <div class="status-bar" id="statusBar"></div>
       </div>
     </div>
 
+    <!-- DIVIDER -->
     <div class="divider">
       <div class="divider-line"></div>
       <div class="divider-text">o subir foto</div>
@@ -193,46 +180,36 @@
       Subir foto del sobre
     </button>
 
+    <!-- RESULTADO -->
     <div class="result-card" id="resultPanel">
       <div class="result-header">
         <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-        <span>Texto detectado</span>
+        <span>Coordenadas encontradas</span>
       </div>
       <div class="result-body">
-        <div style="font-size:11px;color:var(--gris-muted);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em;">Coordenadas leídas</div>
-        <textarea id="coordsDisplay" rows="2" style="width:100%;font-size:18px;font-weight:800;color:var(--gris-texto);border:2px solid var(--gris-borde);border-radius:6px;padding:10px;font-family:'Montserrat',sans-serif;resize:none;outline:none;"></textarea>
-        <div style="font-size:11px;color:var(--gris-muted);margin-top:5px;font-weight:500;" id="coordsHint"></div>
-        <button onclick="copiarYAbrir()" class="btn-maps" style="margin-top:12px;">
+        <div class="coords-label">Coordenadas leídas</div>
+        <textarea id="coordsDisplay" rows="2"></textarea>
+        <div class="coords-edit-hint">Si algún dígito está mal, podés corregirlo antes de abrir Maps.</div>
+        <button class="btn-maps" onclick="copiarYAbrir()">
           <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
           Copiar y abrir Google Maps
         </button>
-        <div id="pasteHint" style="display:none;margin-top:10px;padding:10px 12px;background:#FFF8E1;border:1px solid #FFD54F;border-radius:6px;font-size:12px;font-weight:600;color:#7A5500;line-height:1.5;">
-          ✓ ¡Coordenadas copiadas!<br>En Google Maps: tocá la barra de búsqueda y pegá (mantené presionado → Pegar).
+        <div class="paste-hint" id="pasteHint">
+          ✓ ¡Coordenadas copiadas!<br>
+          En Google Maps: tocá la barra de búsqueda → mantené presionado → <strong>Pegar</strong>.
         </div>
       </div>
     </div>
 
   </div>
 
-  <div class="footer">Andreani · Herramienta interna de entregas · v1.3</div>
+  <div class="footer">Andreani · Herramienta interna de entregas · v2.0</div>
 </div>
 
 <script>
 let stream = null, cameraActive = false;
-// Estado del recorte
-let fullImageData = null; // dataUrl de la imagen completa capturada
-let cropRect = null;      // {x,y,w,h} en coords del canvas de recorte
-let isDragging = false, dragStart = null;
-let cropCanvasEl, cropCtx, cameraWrapperEl;
 
-window.addEventListener('DOMContentLoaded', () => {
-  cropCanvasEl = document.getElementById('cropCanvas');
-  cropCtx = cropCanvasEl.getContext('2d');
-  cameraWrapperEl = document.getElementById('cameraWrapper');
-  initCropEvents();
-});
-
-// ── CÁMARA ─────────────────────────────────────────────
+// ── CÁMARA ──────────────────────────────────────────────
 async function toggleCamera() { cameraActive ? stopCamera() : await startCamera(); }
 
 async function startCamera() {
@@ -245,11 +222,13 @@ async function startCamera() {
     v.srcObject = stream; v.style.display = 'block';
     document.getElementById('placeholder').style.display = 'none';
     document.getElementById('scanLine').style.display = 'block';
-    setBtnCamera('close');
+    document.getElementById('btnCamera').innerHTML = `
+      <svg viewBox="0 0 24 24" fill="currentColor" style="width:15px;height:15px">
+        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+      </svg> Cerrar cámara`;
     document.getElementById('btnCapture').disabled = false;
     cameraActive = true;
-    setStatus('Apuntá al sobre y presioná Capturar.', 'loading');
-    hideCropMode();
+    setStatus('Apuntá al sobre completo y presioná Capturar.', 'loading');
   } catch(e) { setStatus('No se pudo acceder a la cámara: ' + e.message, 'error'); }
 }
 
@@ -259,18 +238,13 @@ function stopCamera() {
   v.srcObject = null; v.style.display = 'none';
   document.getElementById('placeholder').style.display = 'flex';
   document.getElementById('scanLine').style.display = 'none';
-  setBtnCamera('open');
+  document.getElementById('btnCamera').innerHTML = `
+    <svg viewBox="0 0 24 24" fill="currentColor" style="width:15px;height:15px">
+      <path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/>
+      <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
+    </svg> Activar cámara`;
   document.getElementById('btnCapture').disabled = true;
-  cameraActive = false; clearStatus(); hideCropMode();
-}
-
-function setBtnCamera(mode) {
-  const b = document.getElementById('btnCamera');
-  if (mode === 'close') {
-    b.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" style="width:15px;height:15px"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg> Cerrar cámara`;
-  } else {
-    b.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" style="width:15px;height:15px"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg> Activar cámara`;
-  }
+  cameraActive = false; clearStatus();
 }
 
 // ── CAPTURAR ────────────────────────────────────────────
@@ -279,225 +253,20 @@ function capture() {
   const c = document.getElementById('canvas');
   c.width = v.videoWidth; c.height = v.videoHeight;
   c.getContext('2d').drawImage(v, 0, 0);
-  fullImageData = c.toDataURL('image/png');
-
-  // Mostrar imagen capturada en el cropCanvas
-  showCropMode();
+  processImage(c.toDataURL('image/png'));
 }
 
-function showCropMode() {
-  const wrapper = cameraWrapperEl;
-  const w = wrapper.clientWidth, h = wrapper.clientHeight;
-  cropCanvasEl.width = w; cropCanvasEl.height = h;
-  cropCanvasEl.style.display = 'block';
-
-  // Dibujar la imagen capturada en el crop canvas
-  const img = new Image();
-  img.onload = () => {
-    cropCtx.drawImage(img, 0, 0, w, h);
-    // Oscurecer toda la imagen para destacar la selección
-    cropCtx.fillStyle = 'rgba(0,0,0,0.45)';
-    cropCtx.fillRect(0, 0, w, h);
-  };
-  img.src = fullImageData;
-
-  document.getElementById('video').style.display = 'none';
-  document.getElementById('scanLine').style.display = 'none';
-  document.getElementById('cropHint').style.display = 'block';
-  document.getElementById('cropInfo').classList.add('visible');
-  cropRect = null;
-  setStatus('Arrastrá sobre la línea "Referencia:" para seleccionarla.', 'loading');
-}
-
-function hideCropMode() {
-  cropCanvasEl.style.display = 'none';
-  document.getElementById('cropHint').style.display = 'none';
-  document.getElementById('cropInfo').classList.remove('visible');
-  document.getElementById('btnReadCrop').style.display = 'none';
-  cropRect = null; fullImageData = null;
-}
-
-// ── EVENTOS DE RECORTE (touch + mouse) ─────────────────
-function initCropEvents() {
-  // Touch
-  cropCanvasEl.addEventListener('touchstart', e => {
-    e.preventDefault();
-    const pt = getTouchPos(e);
-    dragStart = pt; isDragging = true; cropRect = null;
-    document.getElementById('btnReadCrop').style.display = 'none';
-  }, { passive: false });
-
-  cropCanvasEl.addEventListener('touchmove', e => {
-    e.preventDefault();
-    if (!isDragging) return;
-    const pt = getTouchPos(e);
-    drawSelection(dragStart, pt);
-  }, { passive: false });
-
-  cropCanvasEl.addEventListener('touchend', e => {
-    e.preventDefault();
-    if (!isDragging) return;
-    isDragging = false;
-    if (cropRect && cropRect.w > 10 && cropRect.h > 10) {
-      document.getElementById('btnReadCrop').style.display = 'flex';
-      setStatus('Zona seleccionada. Tocá "Leer zona seleccionada".', 'ok');
-    }
-  }, { passive: false });
-
-  // Mouse (para desktop/preview)
-  cropCanvasEl.addEventListener('mousedown', e => {
-    dragStart = getMousePos(e); isDragging = true; cropRect = null;
-    document.getElementById('btnReadCrop').style.display = 'none';
-  });
-  cropCanvasEl.addEventListener('mousemove', e => {
-    if (!isDragging) return;
-    drawSelection(dragStart, getMousePos(e));
-  });
-  cropCanvasEl.addEventListener('mouseup', e => {
-    if (!isDragging) return;
-    isDragging = false;
-    if (cropRect && cropRect.w > 10 && cropRect.h > 10) {
-      document.getElementById('btnReadCrop').style.display = 'flex';
-      setStatus('Zona seleccionada. Tocá "Leer zona seleccionada".', 'ok');
-    }
-  });
-}
-
-function getTouchPos(e) {
-  const rect = cropCanvasEl.getBoundingClientRect();
-  const t = e.touches[0] || e.changedTouches[0];
-  return { x: t.clientX - rect.left, y: t.clientY - rect.top };
-}
-function getMousePos(e) {
-  const rect = cropCanvasEl.getBoundingClientRect();
-  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-}
-
-function drawSelection(start, end) {
-  const w = cropCanvasEl.width, h = cropCanvasEl.height;
-  const img = new Image();
-  img.onload = () => {
-    cropCtx.clearRect(0, 0, w, h);
-    cropCtx.drawImage(img, 0, 0, w, h);
-    // Oscurecer todo
-    cropCtx.fillStyle = 'rgba(0,0,0,0.45)';
-    cropCtx.fillRect(0, 0, w, h);
-    // Recorte claro
-    const x = Math.min(start.x, end.x);
-    const y = Math.min(start.y, end.y);
-    const rw = Math.abs(end.x - start.x);
-    const rh = Math.abs(end.y - start.y);
-    cropRect = { x, y, w: rw, h: rh };
-    // Limpiar zona seleccionada (mostrar imagen original)
-    cropCtx.save();
-    cropCtx.globalCompositeOperation = 'destination-out';
-    cropCtx.fillRect(x, y, rw, rh);
-    cropCtx.restore();
-    cropCtx.drawImage(img, x * (img.width/w), y * (img.height/h), rw * (img.width/w), rh * (img.height/h), x, y, rw, rh);
-    // Borde de selección
-    cropCtx.strokeStyle = '#D0202A';
-    cropCtx.lineWidth = 2;
-    cropCtx.setLineDash([6, 3]);
-    cropCtx.strokeRect(x, y, rw, rh);
-    cropCtx.setLineDash([]);
-  };
-  img.src = fullImageData;
-}
-
-// ── LEER ZONA RECORTADA ─────────────────────────────────
-function readCrop() {
-  if (!cropRect || !fullImageData) return;
-  const origCanvas = document.getElementById('canvas');
-  const scaleX = origCanvas.width  / cropCanvasEl.width;
-  const scaleY = origCanvas.height / cropCanvasEl.height;
-
-  // Padding generoso: más vertical para no cortar texto
-  const padX = 20, padY = 20;
-  const sx = Math.max(0, (cropRect.x - padX) * scaleX);
-  const sy = Math.max(0, (cropRect.y - padY) * scaleY);
-  const sw = Math.min(origCanvas.width  - sx, (cropRect.w + padX*2) * scaleX);
-  const sh = Math.min(origCanvas.height - sy, (cropRect.h + padY*2) * scaleY);
-
-  // Escalar x4 para OCR
-  const scale = 4;
-  const tmpCanvas = document.createElement('canvas');
-  tmpCanvas.width = sw * scale; tmpCanvas.height = sh * scale;
-  const tmpCtx = tmpCanvas.getContext('2d');
-  tmpCtx.imageSmoothingEnabled = true;
-  tmpCtx.imageSmoothingQuality = 'high';
-
-  // Fondo blanco
-  tmpCtx.fillStyle = 'white';
-  tmpCtx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
-  tmpCtx.drawImage(origCanvas, sx, sy, sw, sh, 0, 0, sw * scale, sh * scale);
-
-  // Preprocesamiento adaptativo: calcular umbral dinámico
-  const imgData = tmpCtx.getImageData(0, 0, tmpCanvas.width, tmpCanvas.height);
-  const data = imgData.data;
-  // Calcular brillo promedio
-  let sum = 0;
-  for (let i = 0; i < data.length; i += 4) {
-    sum += 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
-  }
-  const avg = sum / (data.length / 4);
-  // Umbral = 80% del promedio (captura texto oscuro sobre fondo claro)
-  const threshold = Math.min(avg * 0.85, 200);
-
-  for (let i = 0; i < data.length; i += 4) {
-    const gray = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
-    const val = gray < threshold ? 0 : 255;
-    data[i] = data[i+1] = data[i+2] = val;
-    data[i+3] = 255;
-  }
-  tmpCtx.putImageData(imgData, 0, 0);
-
-  // Intentar primero con el recorte; si falla, usar imagen completa
-  processImageWithFallback(tmpCanvas.toDataURL('image/png'));
-}
-
-async function processImageWithFallback(croppedDataUrl) {
-  setStatus('<div class="spinner"></div>Leyendo zona seleccionada...', 'loading');
-  hideResult();
-  try {
-    const res = await Tesseract.recognize(croppedDataUrl, 'spa+eng', {
-      logger: m => {
-        if (m.status === 'recognizing text')
-          setStatus(`<div class="spinner"></div>Procesando... ${Math.round(m.progress*100)}%`, 'loading');
-      }
-    });
-    const coordText = limpiarCoordenadas(res.data.text);
-    if (coordText) {
-      showResult(coordText, 'Verificá que los números sean correctos antes de abrir Maps.');
-      setStatus('✓ Texto leído. Revisá y tocá el botón.', 'ok');
-    } else {
-      setStatus('<div class="spinner"></div>Buscando en imagen completa...', 'loading');
-      processImage(fullImageData);
-    }
-  } catch(e) { setStatus('Error: ' + e.message, 'error'); }
-}
-
-// ── SUBIR ARCHIVO ───────────────────────────────────────
+// ── SUBIR ARCHIVO ────────────────────────────────────────
 function processFile(e) {
   const f = e.target.files[0]; if (!f) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    fullImageData = ev.target.result;
-    const img = new Image();
-    img.onload = () => {
-      const c = document.getElementById('canvas');
-      c.width = img.width; c.height = img.height;
-      c.getContext('2d').drawImage(img, 0, 0);
-      showCropMode();
-      document.getElementById('placeholder').style.display = 'none';
-    };
-    img.src = fullImageData;
-  };
-  reader.readAsDataURL(f);
+  const r = new FileReader();
+  r.onload = ev => processImage(ev.target.result);
+  r.readAsDataURL(f);
 }
 
-// ── OCR IMAGEN COMPLETA ─────────────────────────────────
+// ── OCR ─────────────────────────────────────────────────
 async function processImage(dataUrl) {
-  setStatus('<div class="spinner"></div>Leyendo texto...', 'loading');
+  setStatus('<div class="spinner"></div>Leyendo imagen...', 'loading');
   hideResult();
   try {
     const res = await Tesseract.recognize(dataUrl, 'spa+eng', {
@@ -506,75 +275,86 @@ async function processImage(dataUrl) {
           setStatus(`<div class="spinner"></div>Procesando... ${Math.round(m.progress*100)}%`, 'loading');
       }
     });
-    const coordText = limpiarCoordenadas(res.data.text);
+    const coordText = extraerCoordenadas(res.data.text);
     if (coordText) {
-      showResult(coordText, 'Verificá que los números sean correctos antes de abrir Maps.');
-      setStatus('✓ Texto leído. Revisá y tocá el botón.', 'ok');
+      mostrarResultado(coordText);
+      setStatus('✓ Coordenadas encontradas. Revisá y tocá el botón.', 'ok');
     } else {
-      setStatus('No se encontró texto de coordenadas. Intentá seleccionar solo la línea "Referencia:".', 'error');
+      setStatus('No se encontró la línea "Referencia:". Asegurate de que el texto sea visible y bien iluminado.', 'error');
     }
-  } catch(e) { setStatus('Error: ' + e.message, 'error'); }
+  } catch(e) { setStatus('Error al procesar: ' + e.message, 'error'); }
 }
 
-// Limpia el texto OCR para quedarse solo con las coordenadas
-function limpiarCoordenadas(text) {
-  const t = text.replace(/\s+/g, ' ').trim();
+// ── EXTRAER COORDENADAS ──────────────────────────────────
+function extraerCoordenadas(text) {
+  const lineas = text.split('\n');
 
-  // 1. Buscar línea "Referencia:" directamente
-  const refMatch = t.match(/[Rr]eferencia[:\s]+(-?\d[\d.,]+\s*[,;]\s*-?\d[\d.,]+)/);
-  if (refMatch) return normalizarCoords(refMatch[1]);
+  // 1. Buscar línea que contenga "Referencia:" con coordenadas
+  for (const linea of lineas) {
+    const m = linea.match(/[Rr]eferencia[:\s]+(-?[\d.,]+)\s*[,;]\s*(-?[\d.,]+)/);
+    if (m) return normalizarCoords(m[1], m[2]);
+  }
 
-  // 2. Buscar par de números con decimales largos (coordenadas)
-  const coordMatch = t.match(/(-?\d{1,3}[.,]\d{4,10})\s*[,;]\s*(-?\d{1,3}[.,]\d{4,10})/);
-  if (coordMatch) return normalizarCoords(coordMatch[1] + ',' + coordMatch[2]);
+  // 2. Buscar cualquier par de coordenadas con muchos decimales
+  const todo = text.replace(/\s+/g, ' ');
+  const m2 = todo.match(/(-?\d{1,3}[.,]\d{5,12})\s*[,;]\s*(-?\d{1,3}[.,]\d{5,12})/);
+  if (m2) return normalizarCoords(m2[1], m2[2]);
 
-  // 3. Devolver todo el texto limpio para que el usuario lo corrija
-  return t.replace(/\n/g, ' ').substring(0, 60);
+  return null;
 }
 
-function normalizarCoords(str) {
-  // Asegurar formato lat,lng con negativos para Argentina
-  const parts = str.split(/[,;]/);
-  if (parts.length < 2) return str.trim();
-  let lat = parseFloat(parts[0].trim().replace(',','.'));
-  let lng = parseFloat(parts[1].trim().replace(',','.'));
+function normalizarCoords(latStr, lngStr) {
+  let lat = parseFloat(latStr.replace(',', '.'));
+  let lng = parseFloat(lngStr.replace(',', '.'));
+  // Forzar negativos para Argentina
   if (lat > 0 && lat >= 22 && lat <= 55) lat = -lat;
   if (lng > 0 && lng >= 53 && lng <= 73) lng = -lng;
   return `${lat},${lng}`;
 }
 
-function showResult(coordText, hint) {
+// ── MOSTRAR RESULTADO ────────────────────────────────────
+function mostrarResultado(coordText) {
   document.getElementById('coordsDisplay').value = coordText;
-  document.getElementById('coordsHint').textContent = hint || 'Podés editar si hace falta corregir algún dígito.';
   document.getElementById('pasteHint').style.display = 'none';
   const p = document.getElementById('resultPanel');
   p.classList.add('visible');
-  p.scrollIntoView({ behavior:'smooth', block:'start' });
+  p.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+function hideResult() {
+  document.getElementById('resultPanel').classList.remove('visible');
+}
+
+// ── COPIAR Y ABRIR MAPS ──────────────────────────────────
 function copiarYAbrir() {
   const coords = document.getElementById('coordsDisplay').value.trim();
   if (!coords) return;
+
   // Copiar al portapapeles
-  navigator.clipboard.writeText(coords).catch(() => {
-    // Fallback para navegadores sin clipboard API
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(coords);
+  } else {
     const ta = document.createElement('textarea');
     ta.value = coords; ta.style.position = 'fixed'; ta.style.opacity = '0';
     document.body.appendChild(ta); ta.select(); document.execCommand('copy');
     document.body.removeChild(ta);
-  });
+  }
+
   document.getElementById('pasteHint').style.display = 'block';
-  // Abrir Google Maps con las coordenadas en la URL directamente
+
+  // Abrir Google Maps con las coordenadas directamente en la URL
   setTimeout(() => {
     window.open(`https://www.google.com/maps/search/${encodeURIComponent(coords)}`, '_blank');
   }, 400);
 }
-function hideResult() { document.getElementById('resultPanel').classList.remove('visible'); }
+
 function setStatus(html, type) {
   const b = document.getElementById('statusBar');
-  b.innerHTML = html; b.className = 'status-bar visible ' + (type||'');
+  b.innerHTML = html; b.className = 'status-bar visible ' + (type || '');
 }
-function clearStatus() { document.getElementById('statusBar').className = 'status-bar'; }
+function clearStatus() {
+  document.getElementById('statusBar').className = 'status-bar';
+}
 </script>
 </body>
 </html>
