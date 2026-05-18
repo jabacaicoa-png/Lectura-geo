@@ -404,37 +404,74 @@ function drawSelection(start, end) {
 // ── LEER ZONA RECORTADA ─────────────────────────────────
 function readCrop() {
   if (!cropRect || !fullImageData) return;
-  // Extraer la zona del canvas original (no el de display)
   const origCanvas = document.getElementById('canvas');
   const scaleX = origCanvas.width  / cropCanvasEl.width;
   const scaleY = origCanvas.height / cropCanvasEl.height;
 
-  // Añadir padding vertical generoso para no cortar texto
-  const pad = 8;
-  const sx = Math.max(0, (cropRect.x - pad) * scaleX);
-  const sy = Math.max(0, (cropRect.y - pad) * scaleY);
-  const sw = Math.min(origCanvas.width  - sx, (cropRect.w + pad*2) * scaleX);
-  const sh = Math.min(origCanvas.height - sy, (cropRect.h + pad*2) * scaleY);
+  // Padding generoso: más vertical para no cortar texto
+  const padX = 20, padY = 20;
+  const sx = Math.max(0, (cropRect.x - padX) * scaleX);
+  const sy = Math.max(0, (cropRect.y - padY) * scaleY);
+  const sw = Math.min(origCanvas.width  - sx, (cropRect.w + padX*2) * scaleX);
+  const sh = Math.min(origCanvas.height - sy, (cropRect.h + padY*2) * scaleY);
 
-  // Escalar el recorte x3 para mejorar OCR
-  const scale = 3;
+  // Escalar x4 para OCR
+  const scale = 4;
   const tmpCanvas = document.createElement('canvas');
   tmpCanvas.width = sw * scale; tmpCanvas.height = sh * scale;
   const tmpCtx = tmpCanvas.getContext('2d');
-  tmpCtx.imageSmoothingEnabled = false;
+  tmpCtx.imageSmoothingEnabled = true;
+  tmpCtx.imageSmoothingQuality = 'high';
+
+  // Fondo blanco
+  tmpCtx.fillStyle = 'white';
+  tmpCtx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
   tmpCtx.drawImage(origCanvas, sx, sy, sw, sh, 0, 0, sw * scale, sh * scale);
 
-  // Preprocesamiento: aumentar contraste
+  // Preprocesamiento adaptativo: calcular umbral dinámico
   const imgData = tmpCtx.getImageData(0, 0, tmpCanvas.width, tmpCanvas.height);
   const data = imgData.data;
+  // Calcular brillo promedio
+  let sum = 0;
+  for (let i = 0; i < data.length; i += 4) {
+    sum += 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+  }
+  const avg = sum / (data.length / 4);
+  // Umbral = 80% del promedio (captura texto oscuro sobre fondo claro)
+  const threshold = Math.min(avg * 0.85, 200);
+
   for (let i = 0; i < data.length; i += 4) {
     const gray = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
-    const val = gray > 128 ? 255 : 0;
+    const val = gray < threshold ? 0 : 255;
     data[i] = data[i+1] = data[i+2] = val;
+    data[i+3] = 255;
   }
   tmpCtx.putImageData(imgData, 0, 0);
 
-  processImage(tmpCanvas.toDataURL('image/png'));
+  // Intentar primero con el recorte; si falla, usar imagen completa
+  processImageWithFallback(tmpCanvas.toDataURL('image/png'));
+}
+
+async function processImageWithFallback(croppedDataUrl) {
+  setStatus('<div class="spinner"></div>Leyendo zona seleccionada...', 'loading');
+  hideResult();
+  try {
+    const res = await Tesseract.recognize(croppedDataUrl, 'spa+eng', {
+      logger: m => {
+        if (m.status === 'recognizing text')
+          setStatus(`<div class="spinner"></div>Procesando... ${Math.round(m.progress*100)}%`, 'loading');
+      }
+    });
+    const coords = extractCoords(res.data.text);
+    if (coords) {
+      showResult(coords.lat, coords.lng, res.data.text.trim());
+      setStatus('✓ Coordenadas encontradas correctamente', 'ok');
+    } else {
+      // Fallback: leer imagen completa
+      setStatus('<div class="spinner"></div>Buscando en imagen completa...', 'loading');
+      processImage(fullImageData);
+    }
+  } catch(e) { setStatus('Error: ' + e.message, 'error'); }
 }
 
 // ── SUBIR ARCHIVO ───────────────────────────────────────
