@@ -550,9 +550,18 @@ function render(){
       (t.gastos||[]).forEach((g,gi)=>{
         const prop=g.cuotaNum>1&&Number(g.cuotaTotal)>1,esC=Number(g.cuotaTotal)>1;
         const verificado=esVerif(g.id);
-        const rbg=verificado?'#FFFACD':(gi%2===0?'#FFFAF7':'#FFF3EC');
+        const rbg=verificado?'#FFFDE7':(gi%2===0?'#FFFAF7':'#FFF3EC');
         const chkG=(!prop&&g.cuotaTotal<=1)?(()=>{const d=E('div');d.style.cssText='width:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;flex-shrink:0;user-select:none;';d.textContent=esFijo('tg_'+g.id)?'☑':'☐';d.onclick=()=>toggleFijo('tg_'+g.id);return d;})():E('div');
+        const btnVerif=(()=>{
+          const d=E('div');
+          d.style.cssText=`width:26px;min-height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;flex-shrink:0;background:${verificado?'#FFD700':'transparent'};color:${verificado?'#5C4000':'#CCC'};user-select:none;border-right:1px solid #D0D0D0;`;
+          d.textContent='✓';
+          d.title=verificado?'Verificado — tocar para desmarcar':'Marcar como verificado';
+          d.onclick=(e)=>{e.stopPropagation();toggleVerif(g.id);};
+          return d;
+        })();
         const filaG=mkRow([
+          {w:26,bg:verificado?'#FFD700':'transparent',node:btnVerif},
           {w:24,bg:rbg,node:E('div')},
           {w:24,bg:rbg,node:chkG},
           {w:160,bg:rbg,node:prop?(()=>{const d=E('div','cv');d.style.cssText='font-style:italic;color:#A07050;cursor:default;';d.textContent=g.concepto;return d;})():mkCell(g.concepto,v=>uG(ti,gi,'concepto',v),{celda:`tg${ti}-${gi}c`})},
@@ -565,10 +574,6 @@ function render(){
             if(!prop&&g.cuotaTotal>1&&g.id){await eliminarPropagadas(t.id,g.id,mesIdx,anio);toast('✓ Cuotas eliminadas','#217346');}
           }))},
         ],'1px solid #EEE');
-        filaG.style.cursor='pointer';
-        filaG.addEventListener('dblclick',()=>toggleVerif(g.id));
-        if(verificado)filaG.title='✓ Verificado — doble click para desmarcar';
-        else filaG.title='Doble click para marcar como verificado';
         tbl.appendChild(filaG);
       });
 
