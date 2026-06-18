@@ -516,11 +516,11 @@
       <div class="manual-grid">
         <div class="input-group">
           <label>Latitud</label>
-          <input type="number" id="manual-lat" placeholder="-33.298471" step="any" inputmode="decimal">
+          <input type="text" id="manual-lat" placeholder="-33.298471" inputmode="decimal" value="-">
         </div>
         <div class="input-group">
           <label>Longitud</label>
-          <input type="number" id="manual-lng" placeholder="-65.217659" step="any" inputmode="decimal">
+          <input type="text" id="manual-lng" placeholder="-65.217659" inputmode="decimal" value="-">
         </div>
       </div>
       <button class="btn btn-primary" id="btn-manual" style="width:100%">
@@ -871,10 +871,19 @@ const manualLat = document.getElementById('manual-lat');
 const manualLng = document.getElementById('manual-lng');
 const btnManual = document.getElementById('btn-manual');
 
+// Asegura que siempre empiece con - y no se duplique
+function enforceNegative(input) {
+  let val = input.value;
+  // Quitar todos los - y volver a poner uno solo al inicio
+  val = val.replace(/-/g, '');
+  input.value = '-' + val;
+}
+
 // Validación visual en tiempo real
 function validateCoordInput(input, min, max) {
+  enforceNegative(input);
   const val = parseFloat(input.value);
-  if (input.value === '' || input.value === '-') {
+  if (input.value === '-' || input.value === '') {
     input.className = '';
   } else if (isNaN(val) || val < min || val > max) {
     input.className = 'input-error';
@@ -885,6 +894,22 @@ function validateCoordInput(input, min, max) {
 
 manualLat.addEventListener('input', () => validateCoordInput(manualLat, -90, 90));
 manualLng.addEventListener('input', () => validateCoordInput(manualLng, -180, 180));
+
+// Al hacer foco, posicionar cursor al final
+function moveCursorToEnd(input) {
+  const len = input.value.length;
+  input.setSelectionRange(len, len);
+}
+manualLat.addEventListener('focus', () => setTimeout(() => moveCursorToEnd(manualLat), 0));
+manualLng.addEventListener('focus', () => setTimeout(() => moveCursorToEnd(manualLng), 0));
+
+// Evitar que borren el -
+manualLat.addEventListener('keydown', e => {
+  if ((e.key === 'Backspace' || e.key === 'Delete') && manualLat.value === '-') e.preventDefault();
+});
+manualLng.addEventListener('keydown', e => {
+  if ((e.key === 'Backspace' || e.key === 'Delete') && manualLng.value === '-') e.preventDefault();
+});
 
 btnManual.addEventListener('click', () => {
   const lat = parseFloat(manualLat.value);
@@ -942,8 +967,8 @@ btnNew.addEventListener('click', () => {
   statusCard.style.display = 'none';
   resultCard.style.display = 'none';
   mapLink.style.display = 'none';
-  manualLat.value = '';
-  manualLng.value = '';
+  manualLat.value = '-';
+  manualLng.value = '-';
   manualLat.className = '';
   manualLng.className = '';
   window.scrollTo({ top: 0, behavior: 'smooth' });
